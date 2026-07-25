@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f1e8" />
+    <meta
+      name="description"
+      content="생년월일과 태어난 시간을 바탕으로 오늘의 운세를 확인하는 감성 운세 서비스"
+    />
+    <title>오늘의 결 — 하루를 읽는 운세</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="paper-noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="오늘의 결 홈">
+        <span class="brand-mark">結</span>
+        <span>오늘의 결</span>
+      </a>
+      <nav aria-label="주요 메뉴">
+        <a class="active" href="#fortune">오늘의 운세</a>
+        <a href="#how">운세 이야기</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="fortune">
+        <div class="hero-copy">
+          <p class="eyebrow">하루의 기운을 읽는 시간</p>
+          <h1>오늘, 당신의 하루는<br /><em>어떤 결</em>로 흐를까요?</h1>
+          <p class="intro">
+            마음이 머무는 곳에 길이 생깁니다.<br />생년월일을 알려주시면 오늘의 흐름을 조용히 읽어드릴게요.
+          </p>
+
+          <form class="fortune-form" id="fortune-form">
+            <div class="field full">
+              <label for="name">이름</label>
+              <input id="name" name="name" type="text" placeholder="이름을 입력해 주세요" maxlength="12" required />
+            </div>
+            <div class="field full">
+              <label for="birthdate">생년월일</label>
+              <input id="birthdate" name="birthdate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="birthtime">태어난 시간</label>
+              <select id="birthtime" name="birthtime">
+                <option value="unknown">모름</option>
+                <option value="dawn">새벽 (00–06시)</option>
+                <option value="morning">아침 (06–12시)</option>
+                <option value="afternoon">낮 (12–18시)</option>
+                <option value="night">저녁 (18–24시)</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="label">성별</span>
+              <div class="segment" role="group" aria-label="성별">
+                <label><input type="radio" name="gender" value="female" checked /><span>여성</span></label>
+                <label><input type="radio" name="gender" value="male" /><span>남성</span></label>
+              </div>
+            </div>
+            <button class="submit-button" type="submit">
+              <span>오늘의 운세 보기</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <p class="privacy"><span aria-hidden="true">◇</span> 입력하신 정보는 저장되지 않아요.</p>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <div class="sun"></div>
+          <div class="orbit orbit-one"><span></span></div>
+          <div class="orbit orbit-two"><span></span></div>
+          <div class="cloud cloud-one"></div>
+          <div class="cloud cloud-two"></div>
+          <div class="mountain mountain-back"></div>
+          <div class="mountain mountain-front"></div>
+          <div class="stamp">今日<br />吉運</div>
+          <span class="star star-one">✦</span>
+          <span class="star star-two">✧</span>
+        </div>
+      </section>
+
+      <section class="result" id="result" hidden aria-live="polite">
+        <button class="close-result" type="button" aria-label="결과 닫기">×</button>
+        <p class="result-date" id="result-date"></p>
+        <h2><span id="result-name"></span>님의 오늘은<br /><em id="result-keyword"></em>의 날이에요.</h2>
+        <p class="result-message" id="result-message"></p>
+        <div class="score-grid">
+          <article><span>전체운</span><strong id="score-total"></strong><div class="meter"><i id="bar-total"></i></div></article>
+          <article><span>애정운</span><strong id="score-love"></strong><div class="meter"><i id="bar-love"></i></div></article>
+          <article><span>금전운</span><strong id="score-money"></strong><div class="meter"><i id="bar-money"></i></div></article>
+          <article><span>일·학업운</span><strong id="score-work"></strong><div class="meter"><i id="bar-work"></i></div></article>
+        </div>
+        <div class="lucky-row">
+          <div><small>행운의 색</small><b id="lucky-color"></b></div>
+          <div><small>행운의 숫자</small><b id="lucky-number"></b></div>
+          <div><small>좋은 시간</small><b id="lucky-time"></b></div>
+        </div>
+        <button class="again-button" id="again-button" type="button">다시 보기</button>
+      </section>
+
+      <section class="how" id="how">
+        <p class="eyebrow">오늘의 결을 읽는 법</p>
+        <h2>작은 마음가짐이<br />하루의 방향을 바꿉니다.</h2>
+        <div class="how-grid">
+          <article><span>一</span><h3>나를 돌아보고</h3><p>지금의 마음과 몸이 보내는 신호에 잠시 귀 기울여 보세요.</p></article>
+          <article><span>二</span><h3>흐름을 살피고</h3><p>좋고 나쁨보다 오늘 나에게 어울리는 속도를 찾아보세요.</p></article>
+          <article><span>三</span><h3>한 걸음 내딛기</h3><p>운세는 정답이 아닌 작은 나침반. 선택은 언제나 당신의 몫이에요.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer><span>오늘의 결</span><p>당신의 모든 날이 다정하기를 바랍니다.</p><small>© 2026 Oneulgyul</small></footer>
+    <script src="app.js"></script>
+  </body>
+</html>
