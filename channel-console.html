@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>채널 콘솔 · 내 유튜브 현황</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --face:#e9ebef;        /* 알루미늄 페이스플레이트 */
+  --panel:#ffffff;
+  --ink:#141821;
+  --dim:#6c7382;
+  --faint:#9aa1b0;
+  --rule:#d2d7df;
+  --rule-soft:#e6e9ee;
+  --up:#177245;
+  --down:#a8322a;
+  --shadow:0 1px 2px rgba(20,24,33,.06), 0 1px 0 rgba(255,255,255,.9) inset;
+  --mono:'Roboto Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --sans:'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Malgun Gothic', sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans); background:var(--face); color:var(--ink);
+  font-size:15px; line-height:1.55;
+  background-image:linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0) 220px);
+  padding-bottom:72px;
+}
+.wrap{max-width:1120px; margin:0 auto; padding:0 20px}
+
+/* ── 헤더 ─────────────────────────────── */
+header{
+  border-bottom:1px solid var(--rule); background:rgba(233,235,239,.88);
+  backdrop-filter:saturate(150%) blur(8px); position:sticky; top:0; z-index:40;
+}
+.bar{display:flex; align-items:center; gap:16px; padding:14px 0; flex-wrap:wrap}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand h1{font-size:1.05rem; font-weight:800; letter-spacing:-.02em}
+.brand .tag{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--faint); border:1px solid var(--rule); border-radius:2px; padding:2px 6px;
+}
+.stamp{font-family:var(--mono); font-size:.72rem; color:var(--dim); letter-spacing:.02em}
+
+button{font-family:inherit; font-size:.85rem; cursor:pointer; border-radius:6px; transition:.14s}
+.btn{
+  border:1px solid var(--rule); background:var(--panel); color:var(--ink);
+  padding:7px 14px; font-weight:600; box-shadow:var(--shadow);
+}
+.btn:hover{border-color:#b9c0cb}
+.btn:disabled{opacity:.5; cursor:default}
+.btn-solid{background:var(--ink); color:#fff; border-color:var(--ink)}
+.btn-solid:hover{background:#2a3040}
+.btn-ghost{border:1px solid transparent; background:transparent; color:var(--dim); padding:7px 10px}
+.btn-ghost:hover{color:var(--ink)}
+.spin{animation:sp .9s linear infinite; display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── 섹션 ─────────────────────────────── */
+section{margin-top:34px}
+.head{display:flex; align-items:center; gap:12px; margin-bottom:14px}
+.head h2{font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); white-space:nowrap}
+.head .rule{flex:1; height:1px; background:var(--rule)}
+.head .note{font-family:var(--mono); font-size:.7rem; color:var(--faint)}
+
+/* ── 채널 스트립 (믹서 채널) ──────────── */
+.strips{display:flex; flex-direction:column; gap:10px}
+.strip{
+  display:grid; grid-template-columns:6px 52px minmax(150px,1.3fr) repeat(3,minmax(96px,.85fr)) auto;
+  align-items:center; gap:0 18px;
+  background:var(--panel); border:1px solid var(--rule); border-radius:8px;
+  box-shadow:var(--shadow); overflow:hidden; padding-right:16px;
+}
+.strip .tab{align-self:stretch; background:var(--c,#888)}
+.strip .thumb{width:40px; height:40px; border-radius:50%; margin-left:12px; background:var(--rule-soft); object-fit:cover}
+.who{padding:14px 0; min-width:0}
+.who .nm{font-weight:700; font-size:.95rem; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.who .hd{font-family:var(--mono); font-size:.7rem; color:var(--faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.metric{padding:12px 0}
+.metric .lab{font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-bottom:1px}
+.metric .val{font-family:var(--mono); font-weight:500; font-size:1.32rem; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.metric .dt{font-family:var(--mono); font-size:.72rem; font-variant-numeric:tabular-nums; color:var(--faint)}
+.dt.up{color:var(--up)} .dt.down{color:var(--down)}
+.strip .kill{border:none; background:transparent; color:var(--faint); font-size:1rem; padding:6px 4px; line-height:1}
+.strip .kill:hover{color:var(--down)}
+.strip.loading{opacity:.5}
+
+/* 점유 막대 */
+.share{grid-column:1/-1; height:3px; background:var(--rule-soft)}
+.share i{display:block; height:100%; background:var(--c,#888); opacity:.55}
+
+/* ── 요약 타일 ────────────────────────── */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
+.tile{background:var(--panel); border:1px solid var(--rule); border-radius:8px; padding:14px 16px; box-shadow:var(--shadow)}
+.tile .lab{font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint)}
+.tile .val{font-family:var(--mono); font-weight:700; font-size:1.6rem; font-variant-numeric:tabular-nums; letter-spacing:-.03em; margin-top:2px}
+.tile .sub{font-family:var(--mono); font-size:.72rem; color:var(--dim)}
+
+/* ── 차트 ─────────────────────────────── */
+.chartbox{background:var(--panel); border:1px solid var(--rule); border-radius:8px; padding:16px; box-shadow:var(--shadow)}
+.tabs{display:flex; gap:4px; margin-bottom:12px}
+.tabs button{
+  border:1px solid transparent; background:transparent; color:var(--dim);
+  padding:5px 12px; font-size:.78rem; font-weight:600; border-radius:5px;
+}
+.tabs button.on{background:var(--ink); color:#fff}
+.canvas-holder{position:relative; height:280px}
+.empty{padding:40px 16px; text-align:center; color:var(--dim); font-size:.88rem}
+.empty b{display:block; color:var(--ink); font-size:.95rem; margin-bottom:4px}
+
+/* ── 영상 목록 ────────────────────────── */
+.vids{background:var(--panel); border:1px solid var(--rule); border-radius:8px; box-shadow:var(--shadow); overflow:hidden}
+.vid{display:grid; grid-template-columns:auto 88px 1fr auto; align-items:center; gap:14px; padding:10px 16px; border-bottom:1px solid var(--rule-soft); text-decoration:none; color:inherit}
+.vid:last-child{border-bottom:none}
+.vid:hover{background:#f6f7f9}
+.vid .dot{width:6px; height:26px; border-radius:2px; background:var(--c,#888)}
+.vid img{width:88px; height:50px; object-fit:cover; border-radius:4px; background:var(--rule-soft)}
+.vid .ti{font-size:.86rem; font-weight:600; line-height:1.35; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.vid .mt{font-family:var(--mono); font-size:.7rem; color:var(--faint); margin-top:2px}
+.vid .num{font-family:var(--mono); font-size:.95rem; font-weight:500; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+.vid .num small{display:block; font-size:.66rem; color:var(--faint); font-weight:400; letter-spacing:.06em}
+.badge{font-family:var(--mono); font-size:.62rem; letter-spacing:.08em; padding:1px 5px; border:1px solid var(--rule); border-radius:3px; color:var(--dim); margin-left:6px}
+
+/* ── 온보딩 ───────────────────────────── */
+.setup{background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:28px; box-shadow:var(--shadow); margin-top:34px}
+.setup h2{font-size:1.15rem; letter-spacing:-.02em; margin-bottom:6px}
+.setup p.lead{color:var(--dim); font-size:.9rem; margin-bottom:22px}
+ol.steps{list-style:none; counter-reset:s; margin-bottom:22px}
+ol.steps li{counter-increment:s; position:relative; padding-left:34px; margin-bottom:12px; font-size:.9rem; color:#333a49}
+ol.steps li::before{
+  content:counter(s,decimal-leading-zero); position:absolute; left:0; top:1px;
+  font-family:var(--mono); font-size:.7rem; font-weight:700; color:var(--faint);
+  border:1px solid var(--rule); border-radius:3px; padding:1px 4px;
+}
+ol.steps a{color:var(--ink); text-decoration:underline; text-underline-offset:2px}
+ol.steps code{font-family:var(--mono); font-size:.82rem; background:var(--face); border:1px solid var(--rule-soft); border-radius:3px; padding:1px 5px}
+
+/* ── 폼 ───────────────────────────────── */
+label.f{display:block; font-size:.78rem; font-weight:600; color:var(--dim); margin-bottom:5px}
+input[type=text], input[type=password]{
+  width:100%; font-family:var(--mono); font-size:.86rem; color:var(--ink);
+  padding:9px 12px; border:1px solid var(--rule); border-radius:6px; background:#fbfcfd;
+}
+input:focus{outline:2px solid var(--ink); outline-offset:-1px; background:#fff}
+.hint{font-size:.75rem; color:var(--faint); margin-top:5px}
+.row{display:flex; gap:10px; align-items:flex-end}
+.row > div{flex:1}
+.field{margin-bottom:16px}
+.swatches{display:flex; gap:8px}
+.sw{width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0}
+.sw.on{border-color:var(--ink); box-shadow:0 0 0 2px #fff inset}
+
+/* ── 모달 ─────────────────────────────── */
+.veil{position:fixed; inset:0; background:rgba(20,24,33,.42); display:none; z-index:60; padding:24px; overflow-y:auto}
+.veil.on{display:block}
+.modal{background:var(--panel); max-width:520px; margin:40px auto; border-radius:10px; box-shadow:0 20px 50px rgba(20,24,33,.28)}
+.modal .mh{display:flex; align-items:center; padding:18px 22px; border-bottom:1px solid var(--rule-soft)}
+.modal .mh h3{font-size:1rem; margin-right:auto}
+.modal .mb{padding:22px}
+.modal .mb hr{border:none; border-top:1px solid var(--rule-soft); margin:22px 0}
+.reg{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--rule-soft)}
+.reg:last-child{border-bottom:none}
+.reg img{width:28px; height:28px; border-radius:50%; background:var(--rule-soft)}
+.reg .n{flex:1; font-size:.86rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.reg .c{width:8px; height:8px; border-radius:50%}
+
+/* ── 토스트 / 배너 ────────────────────── */
+#toast{position:fixed; right:20px; bottom:20px; z-index:90; display:flex; flex-direction:column; gap:8px; align-items:flex-end}
+.toast{background:var(--ink); color:#fff; font-size:.84rem; padding:10px 16px; border-radius:6px; box-shadow:0 8px 24px rgba(20,24,33,.24); animation:in .22s ease}
+.toast.bad{background:var(--down)}
+.toast.good{background:var(--up)}
+@keyframes in{from{opacity:0; transform:translateY(8px)}}
+.banner{background:#fff6e5; border-bottom:1px solid #f0d9a8; color:#7a5312; font-size:.82rem; padding:9px 20px; text-align:center}
+
+@media (max-width:820px){
+  .strip{grid-template-columns:6px 44px 1fr auto; row-gap:0}
+  .strip .metric{grid-column:span 1; padding:0 0 12px}
+  .strip .metric:nth-of-type(1){grid-column:2/4; padding-left:12px}
+  .strip .metric:nth-of-type(2){grid-column:4/5}
+  .strip .metric:nth-of-type(3){display:none}
+  .who{padding:12px 0 8px}
+  .vid{grid-template-columns:auto 64px 1fr; row-gap:2px}
+  .vid img{width:64px; height:36px}
+  .vid .num{grid-column:3; text-align:left}
+  .vid .num small{display:inline; margin-left:6px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+</head>
+<body>
+
+<div id="storeWarn"></div>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <h1>채널 콘솔</h1>
+      <span class="tag">YouTube</span>
+    </div>
+    <span class="stamp" id="stamp"></span>
+    <button class="btn" id="syncBtn" onclick="syncAll()">새로고침</button>
+    <button class="btn btn-ghost" onclick="openSettings()">설정</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 온보딩 -->
+  <div class="setup" id="setup" style="display:none">
+    <h2>먼저 API 키를 넣어주세요</h2>
+    <p class="lead">구글에서 무료로 발급받는 키입니다. 한 번만 넣으면 이 브라우저에 저장됩니다.</p>
+    <ol class="steps">
+      <li><a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">구글 클라우드 콘솔</a>에서 프로젝트를 하나 만듭니다. 이름은 아무거나 괜찮아요.</li>
+      <li><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">YouTube Data API v3</a> 페이지에서 <code>사용</code> 버튼을 누릅니다.</li>
+      <li><a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">사용자 인증 정보</a>에서 <code>사용자 인증 정보 만들기 → API 키</code>를 선택합니다.</li>
+      <li>생성된 키를 복사해 아래에 붙여넣습니다.</li>
+    </ol>
+    <div class="field">
+      <label class="f" for="keyInput">API 키</label>
+      <input type="password" id="keyInput" placeholder="AIza..." autocomplete="off" spellcheck="false">
+      <p class="hint">키는 이 컴퓨터 브라우저에만 저장되고 어디로도 전송되지 않습니다. 유튜브 서버로만 직접 갑니다.</p>
+    </div>
+    <button class="btn btn-solid" onclick="saveKey()">키 저장하고 시작하기</button>
+  </div>
+
+  <!-- 대시보드 -->
+  <div id="dash" style="display:none">
+
+    <section>
+      <div class="head"><h2>합계</h2><span class="rule"></span></div>
+      <div class="tiles" id="tiles"></div>
+    </section>
+
+    <section>
+      <div class="head"><h2>채널</h2><span class="rule"></span><span class="note" id="chCount"></span></div>
+      <div class="strips" id="strips"></div>
+    </section>
+
+    <section>
+      <div class="head"><h2>추이</h2><span class="rule"></span><span class="note">매일 한 번 자동 기록</span></div>
+      <div class="chartbox">
+        <div class="tabs">
+          <button class="on" data-m="subscribers" onclick="switchChart(this)">구독자</button>
+          <button data-m="views" onclick="switchChart(this)">누적 조회수</button>
+          <button data-m="videos" onclick="switchChart(this)">영상 수</button>
+        </div>
+        <div class="canvas-holder" id="chartHolder"><canvas id="chart"></canvas></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="head"><h2>최근 업로드</h2><span class="rule"></span><span class="note" id="vidNote"></span></div>
+      <div class="vids" id="vids"></div>
+    </section>
+
+  </div>
+</div>
+
+<!-- 설정 모달 -->
+<div class="veil" id="veil" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="mh"><h3>설정</h3><button class="btn btn-ghost" onclick="closeSettings()">닫기</button></div>
+    <div class="mb">
+
+      <div class="field">
+        <label class="f" for="chInput">채널 추가</label>
+        <input type="text" id="chInput" placeholder="https://www.youtube.com/@내채널  또는  @핸들" spellcheck="false">
+        <p class="hint">채널 주소, @핸들, UC로 시작하는 채널 ID 모두 됩니다.</p>
+      </div>
+      <div class="field">
+        <label class="f">구분 색상</label>
+        <div class="swatches" id="swatches"></div>
+      </div>
+      <button class="btn btn-solid" onclick="addChannel()" id="addBtn">채널 추가</button>
+
+      <hr>
+      <label class="f">등록된 채널</label>
+      <div id="regList"></div>
+
+      <hr>
+      <div class="field">
+        <label class="f" for="keyInput2">API 키</label>
+        <input type="password" id="keyInput2" placeholder="AIza..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="btn" onclick="saveKey2()">키 변경</button>
+
+      <hr>
+      <label class="f">기록 백업</label>
+      <p class="hint" style="margin:0 0 10px">기록은 이 브라우저에만 있습니다. 가끔 내보내 두면 안전합니다.</p>
+      <div style="display:flex; gap:8px">
+        <button class="btn" onclick="exportData()">내보내기</button>
+        <button class="btn" onclick="document.getElementById('importFile').click()">가져오기</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   채널 콘솔 — 서버 없이 도는 유튜브 다채널 대시보드
+   유튜브 공식 Data API v3만 사용합니다.
+   ══════════════════════════════════════════════════ */
+
+const API = 'https://www.googleapis.com/youtube/v3';
+const PALETTE = ['#3b5bdb','#c2255c','#0b7285','#e8590c','#2b8a3e','#5f3dc4'];
+
+/* ── 저장소 (없으면 메모리로 대체) ───────────── */
+const DB = (() => {
+  let mem = {}, ok = true;
+  try { localStorage.setItem('__probe','1'); localStorage.removeItem('__probe'); }
+  catch(e){ ok = false; }
+  return {
+    ok,
+    get(k){ try { return ok ? localStorage.getItem(k) : (k in mem ? mem[k] : null); } catch(e){ return mem[k] ?? null; } },
+    set(k,v){ try { if(ok) localStorage.setItem(k,v); else mem[k]=v; } catch(e){ mem[k]=v; } },
+    del(k){ try { if(ok) localStorage.removeItem(k); else delete mem[k]; } catch(e){ delete mem[k]; } }
+  };
+})();
+
+const K = { KEY:'cc_api_key', CH:'cc_channels', SNAP:'cc_snapshots', VID:'cc_videos' };
+
+const readJSON = (k, d) => { try { return JSON.parse(DB.get(k)) ?? d; } catch(e){ return d; } };
+const writeJSON = (k, v) => DB.set(k, JSON.stringify(v));
+
+let apiKey    = DB.get(K.KEY) || '';
+let channels  = readJSON(K.CH, []);        // [{id,title,handle,thumb,color}]
+let snapshots = readJSON(K.SNAP, {});      // {chId: {'YYYY-MM-DD': {subscribers,views,videos}}}
+let videos    = readJSON(K.VID, []);       // [{id,chId,title,thumb,publishedAt,views,likes,comments}]
+let pickColor = PALETTE[0];
+let chartMode = 'subscribers';
+let chartRef  = null;
+
+/* ── 유틸 ─────────────────────────────────── */
+const esc = s => { const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; };
+const nf  = n => (+n||0).toLocaleString('ko-KR');
+const today = () => {
+  const d = new Date(), p = x => String(x).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+};
+function compact(n){
+  n = +n || 0;
+  if (n >= 100000000) return (n/100000000).toFixed(n>=1000000000?0:1).replace(/\.0$/,'') + '억';
+  if (n >= 10000)     return (n/10000).toFixed(n>=100000?0:1).replace(/\.0$/,'') + '만';
+  return nf(n);
+}
+function ago(iso){
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 3600) return Math.max(1,Math.floor(s/60)) + '분 전';
+  if (s < 86400) return Math.floor(s/3600) + '시간 전';
+  if (s < 2592000) return Math.floor(s/86400) + '일 전';
+  if (s < 31536000) return Math.floor(s/2592000) + '개월 전';
+  return Math.floor(s/31536000) + '년 전';
+}
+function toast(msg, kind){
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3600);
+}
+
+/* ── API 호출 ─────────────────────────────── */
+async function yt(endpoint, params){
+  const q = new URLSearchParams({ ...params, key: apiKey });
+  let res;
+  try { res = await fetch(`${API}/${endpoint}?${q}`); }
+  catch(e){ throw new Error('인터넷 연결을 확인해주세요'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok){
+    const m = data?.error?.message || res.statusText;
+    const r = data?.error?.errors?.[0]?.reason;
+    if (r === 'quotaExceeded') throw new Error('오늘 API 사용량을 다 썼습니다. 내일 다시 됩니다');
+    if (r === 'keyInvalid' || res.status === 400) throw new Error('API 키가 올바르지 않습니다: ' + m);
+    if (res.status === 403) throw new Error('API 키 권한을 확인해주세요: ' + m);
+    throw new Error(m);
+  }
+  return data;
+}
+
+/* 입력값 → 채널 조회 파라미터 */
+function parseInput(raw){
+  let s = raw.trim();
+  s = s.replace(/^https?:\/\//,'').replace(/^www\./,'');
+  let m;
+  if ((m = s.match(/youtube\.com\/channel\/(UC[\w-]{20,})/i))) return { id: m[1] };
+  if ((m = s.match(/youtube\.com\/@([\w.\-가-힣]+)/i)))         return { forHandle: '@' + m[1] };
+  if ((m = s.match(/youtube\.com\/(?:c|user)\/([\w.\-]+)/i)))   return { forUsername: m[1] };
+  if (/^UC[\w-]{20,}$/.test(s))                                 return { id: s };
+  if (s.startsWith('@'))                                        return { forHandle: s };
+  return { forHandle: '@' + s };
+}
+
+async function fetchChannels(ids){
+  const out = [];
+  for (let i = 0; i < ids.length; i += 50){
+    const d = await yt('channels', { part:'snippet,statistics,contentDetails', id: ids.slice(i,i+50).join(','), maxResults:50 });
+    out.push(...(d.items || []));
+  }
+  return out;
+}
+
+async function fetchVideos(chId){
+  const uploads = 'UU' + chId.slice(2);
+  const pl = await yt('playlistItems', { part:'contentDetails', playlistId: uploads, maxResults: 12 });
+  const ids = (pl.items || []).map(i => i.contentDetails.videoId).filter(Boolean);
+  if (!ids.length) return [];
+  const v = await yt('videos', { part:'snippet,statistics,contentDetails', id: ids.join(',') });
+  return (v.items || []).map(i => ({
+    id: i.id, chId,
+    title: i.snippet.title,
+    thumb: i.snippet.thumbnails?.medium?.url || i.snippet.thumbnails?.default?.url || '',
+    publishedAt: i.snippet.publishedAt,
+    views: +(i.statistics?.viewCount || 0),
+    likes: +(i.statistics?.likeCount || 0),
+    comments: +(i.statistics?.commentCount || 0),
+    short: /^PT[0-5]?\dS$|^PT1M[0-5]?\dS$|^PT1M$/.test(i.contentDetails?.duration || '')
+  }));
+}
+
+/* ── 스냅샷 ───────────────────────────────── */
+function recordSnapshot(chId, stats){
+  if (!snapshots[chId]) snapshots[chId] = {};
+  snapshots[chId][today()] = stats;
+  writeJSON(K.SNAP, snapshots);
+}
+function snapDates(chId){ return Object.keys(snapshots[chId] || {}).sort(); }
+function snapBefore(chId, days){
+  const dates = snapDates(chId);
+  if (!dates.length) return null;
+  const target = new Date(); target.setDate(target.getDate() - days);
+  const cut = target.toISOString().slice(0,10);
+  const prior = dates.filter(d => d <= cut);
+  if (prior.length) return snapshots[chId][prior[prior.length-1]];
+  return dates.length > 1 ? snapshots[chId][dates[0]] : null;
+}
+
+/* ── 데이터 동기화 ────────────────────────── */
+async function syncAll(silent){
+  if (!apiKey || !channels.length) return;
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin">◠</span> 가져오는 중';
+  try {
+    const items = await fetchChannels(channels.map(c => c.id));
+    const byId = Object.fromEntries(items.map(i => [i.id, i]));
+    channels = channels.map(c => {
+      const it = byId[c.id];
+      if (!it) return c;
+      recordSnapshot(c.id, {
+        subscribers: +(it.statistics?.subscriberCount || 0),
+        views:       +(it.statistics?.viewCount || 0),
+        videos:      +(it.statistics?.videoCount || 0)
+      });
+      return { ...c,
+        title: it.snippet.title,
+        handle: it.snippet.customUrl || c.handle || '',
+        thumb: it.snippet.thumbnails?.default?.url || c.thumb || '',
+        hidden: (it.statistics?.hiddenSubscriberCount === true)
+      };
+    });
+    writeJSON(K.CH, channels);
+
+    const lists = await Promise.all(channels.map(c => fetchVideos(c.id).catch(() => [])));
+    videos = lists.flat();
+    writeJSON(K.VID, videos);
+
+    DB.set('cc_last', new Date().toISOString());
+    render();
+    if (!silent) toast('현황을 불러왔습니다', 'good');
+  } catch(e){
+    toast(e.message, 'bad');
+  } finally {
+    btn.disabled = false; btn.textContent = '새로고침';
+  }
+}
+
+/* ── 화면 그리기 ──────────────────────────── */
+function render(){
+  document.getElementById('setup').style.display = apiKey ? 'none' : 'block';
+  document.getElementById('dash').style.display  = apiKey ? 'block' : 'none';
+  if (!apiKey) return;
+  drawStamp(); drawTiles(); drawStrips(); drawChart(); drawVideos(); drawRegList();
+}
+
+function drawStamp(){
+  const t = DB.get('cc_last');
+  document.getElementById('stamp').textContent = t
+    ? new Date(t).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) + ' 기준'
+    : '';
+  document.getElementById('chCount').textContent = channels.length ? channels.length + '개 채널' : '';
+}
+
+function delta(chId, metric, days){
+  const cur = snapshots[chId]?.[today()];
+  const old = snapBefore(chId, days);
+  if (!cur || !old) return null;
+  return cur[metric] - old[metric];
+}
+function deltaHTML(d, unit){
+  if (d === null) return '<span class="dt">—</span>';
+  if (d === 0)    return '<span class="dt">변동 없음</span>';
+  const s = d > 0 ? 'up' : 'down';
+  return `<span class="dt ${s}">${d>0?'▲':'▼'} ${nf(Math.abs(d))}${unit||''}</span>`;
+}
+
+function drawTiles(){
+  const cur = channels.map(c => snapshots[c.id]?.[today()]).filter(Boolean);
+  const sum = k => cur.reduce((a,s) => a + (s[k]||0), 0);
+  const sumD = (m,d) => channels.reduce((a,c) => { const x = delta(c.id,m,d); return x===null?a:a+x; }, 0);
+  const has = channels.some(c => snapDates(c.id).length > 1);
+  const t = [
+    { lab:'전체 구독자', val: compact(sum('subscribers')), sub: has ? '어제 대비 ' + (sumD('subscribers',1)>=0?'+':'') + nf(sumD('subscribers',1)) : nf(sum('subscribers')) + '명' },
+    { lab:'전체 조회수', val: compact(sum('views')),       sub: has ? '어제 대비 +' + nf(Math.max(0,sumD('views',1))) : nf(sum('views')) + '회' },
+    { lab:'전체 영상',   val: nf(sum('videos')),           sub: has ? '7일간 +' + nf(Math.max(0,sumD('videos',7))) + '개' : '개' },
+    { lab:'기록 일수',   val: Math.max(0,...channels.map(c => snapDates(c.id).length)), sub: '일치 누적' }
+  ];
+  document.getElementById('tiles').innerHTML = t.map(x =>
+    `<div class="tile"><div class="lab">${x.lab}</div><div class="val">${x.val}</div><div class="sub">${esc(x.sub)}</div></div>`
+  ).join('');
+}
+
+function drawStrips(){
+  const box = document.getElementById('strips');
+  if (!channels.length){
+    box.innerHTML = `<div class="chartbox empty"><b>아직 등록한 채널이 없습니다</b>설정에서 채널 주소를 넣으면 여기에 현황이 뜹니다.</div>`;
+    return;
+  }
+  const total = channels.reduce((a,c) => a + (snapshots[c.id]?.[today()]?.subscribers || 0), 0) || 1;
+  box.innerHTML = channels.map(c => {
+    const s = snapshots[c.id]?.[today()] || {subscribers:0,views:0,videos:0};
+    const pct = (s.subscribers / total * 100).toFixed(1);
+    return `
+    <div class="strip" style="--c:${c.color}">
+      <div class="tab"></div>
+      <img class="thumb" src="${esc(c.thumb)}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="who">
+        <div class="nm">${esc(c.title || c.id)}</div>
+        <div class="hd">${esc(c.handle || c.id)}</div>
+      </div>
+      <div class="metric">
+        <div class="lab">구독자</div>
+        <div class="val">${nf(s.subscribers)}</div>
+        ${deltaHTML(delta(c.id,'subscribers',1))}
+      </div>
+      <div class="metric">
+        <div class="lab">누적 조회수</div>
+        <div class="val">${compact(s.views)}</div>
+        ${deltaHTML(delta(c.id,'views',1))}
+      </div>
+      <div class="metric">
+        <div class="lab">영상</div>
+        <div class="val">${nf(s.videos)}</div>
+        ${deltaHTML(delta(c.id,'videos',7),'개 / 7일')}
+      </div>
+      <button class="kill" onclick="removeChannel('${c.id}')" title="목록에서 빼기">✕</button>
+      <div class="share"><i style="width:${pct}%"></i></div>
+    </div>`;
+  }).join('');
+}
+
+function switchChart(btn){
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  chartMode = btn.dataset.m;
+  drawChart();
+}
+
+function drawChart(){
+  const holder = document.getElementById('chartHolder');
+  const dates = [...new Set(channels.flatMap(c => snapDates(c.id)))].sort();
+  if (dates.length < 2){
+    if (chartRef){ chartRef.destroy(); chartRef = null; }
+    holder.innerHTML = `<div class="empty"><b>내일부터 그래프가 그려집니다</b>하루에 한 번씩 자동으로 기록해서 변화를 쌓아갑니다. 오늘은 첫 기록이 저장됐습니다.</div>`;
+    return;
+  }
+  if (!document.getElementById('chart')) holder.innerHTML = '<canvas id="chart"></canvas>';
+  const ctx = document.getElementById('chart');
+  if (chartRef) chartRef.destroy();
+  chartRef = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates.map(d => d.slice(5).replace('-','/')),
+      datasets: channels.map(c => ({
+        label: c.title || c.id,
+        data: dates.map(d => snapshots[c.id]?.[d]?.[chartMode] ?? null),
+        borderColor: c.color, backgroundColor: c.color,
+        borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, tension: .25, spanGaps: true
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { position:'bottom', labels:{ boxWidth:8, boxHeight:8, usePointStyle:true, pointStyle:'circle', font:{ family:"Pretendard, sans-serif", size:11 }, padding:14 } },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}  ${nf(c.parsed.y)}` } }
+      },
+      scales: {
+        x: { grid:{ display:false }, ticks:{ font:{ family:"'Roboto Mono', monospace", size:10 }, color:'#9aa1b0', maxTicksLimit:10 } },
+        y: { grid:{ color:'#eceef1' }, border:{ display:false }, ticks:{ font:{ family:"'Roboto Mono', monospace", size:10 }, color:'#9aa1b0', callback: v => compact(v) } }
+      }
+    }
+  });
+}
+
+function drawVideos(){
+  const box = document.getElementById('vids');
+  const list = [...videos].sort((a,b) => new Date(b.publishedAt) - new Date(a.publishedAt)).slice(0,25);
+  document.getElementById('vidNote').textContent = list.length ? list.length + '개' : '';
+  if (!list.length){
+    box.innerHTML = `<div class="empty"><b>표시할 영상이 없습니다</b>채널을 등록하고 새로고침하면 최근 업로드가 모입니다.</div>`;
+    return;
+  }
+  box.innerHTML = list.map(v => {
+    const c = channels.find(x => x.id === v.chId) || {};
+    return `
+    <a class="vid" style="--c:${c.color||'#888'}" href="https://www.youtube.com/watch?v=${esc(v.id)}" target="_blank" rel="noopener">
+      <span class="dot"></span>
+      <img src="${esc(v.thumb)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div>
+        <div class="ti">${esc(v.title)}${v.short?'<span class="badge">SHORTS</span>':''}</div>
+        <div class="mt">${esc(c.title||'')} · ${ago(v.publishedAt)} · 좋아요 ${nf(v.likes)} · 댓글 ${nf(v.comments)}</div>
+      </div>
+      <div class="num">${compact(v.views)}<small>조회수</small></div>
+    </a>`;
+  }).join('');
+}
+
+/* ── 채널 관리 ────────────────────────────── */
+async function addChannel(){
+  const raw = document.getElementById('chInput').value.trim();
+  if (!raw) return toast('채널 주소를 입력해주세요', 'bad');
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true; btn.textContent = '확인 중...';
+  try {
+    const p = parseInput(raw);
+    let d = await yt('channels', { part:'snippet,statistics', ...p });
+    if (!d.items?.length && p.forHandle)
+      d = await yt('channels', { part:'snippet,statistics', forUsername: p.forHandle.replace('@','') });
+    if (!d.items?.length) throw new Error('그 채널을 찾지 못했습니다. 주소를 다시 확인해주세요');
+    const it = d.items[0];
+    if (channels.some(c => c.id === it.id)) throw new Error('이미 등록된 채널입니다');
+    channels.push({
+      id: it.id, title: it.snippet.title,
+      handle: it.snippet.customUrl || '',
+      thumb: it.snippet.thumbnails?.default?.url || '',
+      color: pickColor
+    });
+    writeJSON(K.CH, channels);
+    document.getElementById('chInput').value = '';
+    pickColor = PALETTE[channels.length % PALETTE.length];
+    drawSwatches();
+    toast(it.snippet.title + ' 등록됨', 'good');
+    await syncAll(true);
+    drawRegList();
+  } catch(e){
+    toast(e.message, 'bad');
+  } finally {
+    btn.disabled = false; btn.textContent = '채널 추가';
+  }
+}
+
+function removeChannel(id){
+  const c = channels.find(x => x.id === id);
+  if (!confirm(`${c?.title || '이 채널'}을 목록에서 뺄까요?\n지금까지 쌓인 기록도 함께 지워집니다.`)) return;
+  channels = channels.filter(x => x.id !== id);
+  delete snapshots[id];
+  videos = videos.filter(v => v.chId !== id);
+  writeJSON(K.CH, channels); writeJSON(K.SNAP, snapshots); writeJSON(K.VID, videos);
+  render();
+}
+
+function drawRegList(){
+  const box = document.getElementById('regList');
+  if (!channels.length){ box.innerHTML = '<p class="hint">아직 없습니다.</p>'; return; }
+  box.innerHTML = channels.map(c => `
+    <div class="reg">
+      <span class="c" style="background:${c.color}"></span>
+      <img src="${esc(c.thumb)}" alt="" onerror="this.style.visibility='hidden'">
+      <span class="n">${esc(c.title || c.id)}</span>
+      <button class="btn btn-ghost" onclick="removeChannel('${c.id}')">빼기</button>
+    </div>`).join('');
+}
+
+function drawSwatches(){
+  document.getElementById('swatches').innerHTML = PALETTE.map(c =>
+    `<button class="sw ${c===pickColor?'on':''}" style="background:${c}" onclick="pickColor='${c}';drawSwatches()" aria-label="색상 ${c}"></button>`
+  ).join('');
+}
+
+/* ── 키 / 백업 ────────────────────────────── */
+function saveKey(){
+  const v = document.getElementById('keyInput').value.trim();
+  if (!v) return toast('키를 입력해주세요', 'bad');
+  apiKey = v; DB.set(K.KEY, v);
+  render(); openSettings();
+  toast('키를 저장했습니다. 이제 채널을 추가해주세요', 'good');
+}
+function saveKey2(){
+  const v = document.getElementById('keyInput2').value.trim();
+  if (!v) return toast('키를 입력해주세요', 'bad');
+  apiKey = v; DB.set(K.KEY, v);
+  toast('키를 바꿨습니다', 'good');
+  syncAll(true);
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify({ v:1, channels, snapshots, exportedAt:new Date().toISOString() }, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `채널콘솔_백업_${today()}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('백업 파일을 내려받았습니다', 'good');
+}
+function importData(ev){
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d.channels || !d.snapshots) throw new Error('형식이 맞지 않는 파일입니다');
+      channels = d.channels;
+      Object.entries(d.snapshots).forEach(([id, days]) => {
+        snapshots[id] = Object.assign({}, days, snapshots[id] || {});
+      });
+      writeJSON(K.CH, channels); writeJSON(K.SNAP, snapshots);
+      render(); toast('기록을 불러왔습니다', 'good');
+      syncAll(true);
+    } catch(e){ toast(e.message, 'bad'); }
+  };
+  r.readAsText(f);
+  ev.target.value = '';
+}
+
+/* ── 모달 ─────────────────────────────────── */
+function openSettings(){
+  document.getElementById('veil').classList.add('on');
+  document.getElementById('keyInput2').value = apiKey;
+  drawSwatches(); drawRegList();
+}
+function closeSettings(){ document.getElementById('veil').classList.remove('on'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+document.getElementById('chInput').addEventListener('keydown', e => { if (e.key === 'Enter') addChannel(); });
+document.getElementById('keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+
+/* ── 시작 ─────────────────────────────────── */
+(function init(){
+  if (!DB.ok){
+    document.getElementById('storeWarn').innerHTML =
+      '<div class="banner">지금은 기록이 저장되지 않는 환경입니다. 이 파일을 컴퓨터에 내려받아서 열면 매일 기록이 쌓입니다.</div>';
+  }
+  pickColor = PALETTE[channels.length % PALETTE.length];
+  render();
+  if (apiKey && channels.length){
+    const last = DB.get('cc_last');
+    const stale = !last || (Date.now() - new Date(last)) > 30*60*1000;
+    if (stale) syncAll(true); else render();
+  }
+})();
+</script>
+</body>
+</html>
