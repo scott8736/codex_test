@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --face:#e9ebef;        /* 알루미늄 페이스플레이트 */
@@ -250,18 +249,6 @@ input:focus{outline:2px solid var(--ink); outline-offset:-1px; background:#fff}
     </section>
 
     <section>
-      <div class="head"><h2>추이</h2><span class="rule"></span><span class="note">매일 한 번 자동 기록</span></div>
-      <div class="chartbox">
-        <div class="tabs">
-          <button class="on" data-m="subscribers" onclick="switchChart(this)">구독자</button>
-          <button data-m="views" onclick="switchChart(this)">누적 조회수</button>
-          <button data-m="videos" onclick="switchChart(this)">영상 수</button>
-        </div>
-        <div class="canvas-holder" id="chartHolder"><canvas id="chart"></canvas></div>
-      </div>
-    </section>
-
-    <section>
       <div class="head"><h2 id="vidTitle">최근 업로드</h2><span class="rule"></span><span class="kinds" id="vidKinds"></span><span class="note" id="vidNote"></span></div>
       <div class="vids" id="vids"></div>
     </section>
@@ -344,8 +331,6 @@ let channels  = readJSON(K.CH, []);        // [{id,title,handle,thumb,color}]
 let snapshots = readJSON(K.SNAP, {});      // {chId: {'YYYY-MM-DD': {subscribers,views,videos}}}
 let videos    = readJSON(K.VID, []);       // [{id,chId,title,thumb,publishedAt,views,likes,comments}]
 let pickColor = PALETTE[0];
-let chartMode = 'subscribers';
-let chartRef  = null;
 
 /* ── 유틸 ─────────────────────────────────── */
 const esc = s => { const d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; };
@@ -502,7 +487,7 @@ function render(){
   document.getElementById('setup').style.display = apiKey ? 'none' : 'block';
   document.getElementById('dash').style.display  = apiKey ? 'block' : 'none';
   if (!apiKey) return;
-  drawStamp(); drawTiles(); drawStrips(); drawChart(); drawVideos(); drawRegList(); drawBackupWarn();
+  drawStamp(); drawTiles(); drawStrips(); drawVideos(); drawRegList(); drawBackupWarn();
 }
 
 /* 백업이 7일 넘게 없으면 알린다 (기록은 이 브라우저에만 있다) */
@@ -605,50 +590,6 @@ function pickChannel(id){
   selectedCh = (id === selectedCh) ? null : id;
   drawStrips(); drawVideos();
   if (selectedCh) document.getElementById('vids').scrollIntoView({behavior:'smooth', block:'nearest'});
-}
-
-function switchChart(btn){
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  chartMode = btn.dataset.m;
-  drawChart();
-}
-
-function drawChart(){
-  const holder = document.getElementById('chartHolder');
-  const dates = [...new Set(channels.flatMap(c => snapDates(c.id)))].sort();
-  if (dates.length < 2){
-    if (chartRef){ chartRef.destroy(); chartRef = null; }
-    holder.innerHTML = `<div class="empty"><b>내일부터 그래프가 그려집니다</b>하루에 한 번씩 자동으로 기록해서 변화를 쌓아갑니다. 오늘은 첫 기록이 저장됐습니다.</div>`;
-    return;
-  }
-  if (!document.getElementById('chart')) holder.innerHTML = '<canvas id="chart"></canvas>';
-  const ctx = document.getElementById('chart');
-  if (chartRef) chartRef.destroy();
-  chartRef = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: dates.map(d => d.slice(5).replace('-','/')),
-      datasets: channels.map(c => ({
-        label: c.title || c.id,
-        data: dates.map(d => snapshots[c.id]?.[d]?.[chartMode] ?? null),
-        borderColor: c.color, backgroundColor: c.color,
-        borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, tension: .25, spanGaps: true
-      }))
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
-      plugins: {
-        legend: { position:'bottom', labels:{ boxWidth:8, boxHeight:8, usePointStyle:true, pointStyle:'circle', font:{ family:"Pretendard, sans-serif", size:11 }, padding:14 } },
-        tooltip: { callbacks: { label: c => ` ${c.dataset.label}  ${nf(c.parsed.y)}` } }
-      },
-      scales: {
-        x: { grid:{ display:false }, ticks:{ font:{ family:"'Roboto Mono', monospace", size:10 }, color:'#9aa1b0', maxTicksLimit:10 } },
-        y: { grid:{ color:'#eceef1' }, border:{ display:false }, ticks:{ font:{ family:"'Roboto Mono', monospace", size:10 }, color:'#9aa1b0', callback: v => compact(v) } }
-      }
-    }
-  });
 }
 
 function drawVideos(){
