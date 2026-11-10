@@ -68,37 +68,36 @@ section{margin-top:34px}
 .head .rule{flex:1; height:1px; background:var(--rule)}
 .head .note{font-family:var(--mono); font-size:.7rem; color:var(--faint)}
 
-/* ── 채널 스트립 (믹서 채널) ──────────── */
-.strips{display:flex; flex-direction:column; gap:10px}
-.strip{
-  display:grid; grid-template-columns:6px 52px minmax(150px,1.3fr) repeat(3,minmax(96px,.85fr)) auto;
-  align-items:center; gap:0 18px;
-  background:var(--panel); border:1px solid var(--rule); border-radius:8px;
-  box-shadow:var(--shadow); overflow:hidden; padding-right:16px;
+/* ── 채널 표 (한 줄에 채널 하나) ─────────── */
+.tbl{background:var(--panel); border:1px solid var(--rule); border-radius:8px; box-shadow:var(--shadow); overflow:hidden}
+.tr{
+  display:grid; grid-template-columns:minmax(190px,1.7fr) repeat(3,minmax(110px,1fr)) minmax(84px,.7fr) 28px;
+  align-items:center; gap:0 14px; padding:0 14px 0 18px; min-height:46px;
+  border-bottom:1px solid var(--rule-soft); cursor:pointer; box-shadow:inset 4px 0 0 var(--c,transparent);
 }
-.strip .tab{align-self:stretch; background:var(--c,#888)}
-.strip .thumb{width:40px; height:40px; border-radius:50%; margin-left:12px; background:var(--rule-soft); object-fit:cover}
-.who{padding:14px 0; min-width:0}
-.who .nm{font-weight:700; font-size:.95rem; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.who .hd{font-family:var(--mono); font-size:.7rem; color:var(--faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.metric{padding:12px 0}
-.metric .lab{font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-bottom:1px}
-.metric .val{font-family:var(--mono); font-weight:500; font-size:1.32rem; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
-.metric .dt{font-family:var(--mono); font-size:.72rem; font-variant-numeric:tabular-nums; color:var(--faint)}
+.tr:last-child{border-bottom:none}
+.tr:hover{background:#f6f7f9}
+.tr.sel{background:#eef2ff}
+.tr.th{min-height:34px; cursor:default; background:#f6f7f9; box-shadow:none; font-size:.7rem; color:var(--faint); letter-spacing:.06em}
+.tr.th:hover{background:#f6f7f9}
+.th button{border:none; background:transparent; color:inherit; font-size:inherit; letter-spacing:inherit; padding:8px 0; text-align:left; font-weight:600}
+.th button:hover, .th button.on{color:var(--ink)}
+.who{display:flex; align-items:center; gap:10px; min-width:0; padding:6px 0}
+.who img{width:30px; height:30px; border-radius:50%; background:var(--rule-soft); object-fit:cover; flex:none}
+.who .nm{font-weight:700; font-size:.9rem; letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.who .hd{font-family:var(--mono); font-size:.68rem; color:var(--faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.who > div{min-width:0}
+.cell{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:1rem; font-weight:500; white-space:nowrap}
+.cell .dt{font-size:.7rem; margin-left:6px; font-weight:400}
+.cell.mut{font-size:.76rem; color:var(--dim); font-weight:400}
+.dt{color:var(--faint)}
 .dt.up{color:var(--up)} .dt.down{color:var(--down)}
-.strip .kill{border:none; background:transparent; color:var(--faint); font-size:1rem; padding:6px 4px; line-height:1}
-.strip .kill:hover{color:var(--down)}
-.strip.loading{opacity:.5}
+.tr .kill{border:none; background:transparent; color:var(--faint); font-size:.95rem; padding:6px 4px; line-height:1}
+.tr .kill:hover{color:var(--down)}
 .kinds{display:flex; gap:4px; margin-right:10px}
 .kinds button{border:1px solid var(--rule); background:var(--panel); border-radius:5px; font-size:.72rem; padding:3px 9px; color:var(--dim); cursor:pointer}
 .kinds button.on{background:#1f2430; color:#fff; border-color:#1f2430}
-.strip{cursor:pointer}
-.strip.sel{outline:2px solid var(--c,#888); outline-offset:-2px}
 .head .note a{color:inherit; text-decoration:underline}
-
-/* 점유 막대 */
-.share{grid-column:1/-1; height:3px; background:var(--rule-soft)}
-.share i{display:block; height:100%; background:var(--c,#888); opacity:.55}
 
 /* ── 요약 타일 ────────────────────────── */
 .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
@@ -184,12 +183,8 @@ input:focus{outline:2px solid var(--ink); outline-offset:-1px; background:#fff}
 .banner{background:#fff6e5; border-bottom:1px solid #f0d9a8; color:#7a5312; font-size:.82rem; padding:9px 20px; text-align:center}
 
 @media (max-width:820px){
-  .strip{grid-template-columns:6px 44px 1fr auto; row-gap:0}
-  .strip .metric{grid-column:span 1; padding:0 0 12px}
-  .strip .metric:nth-of-type(1){grid-column:2/4; padding-left:12px}
-  .strip .metric:nth-of-type(2){grid-column:4/5}
-  .strip .metric:nth-of-type(3){display:none}
-  .who{padding:12px 0 8px}
+  .tr{grid-template-columns:1fr 92px 92px 24px}
+  .tr > :nth-child(4), .tr > :nth-child(5){display:none}
   .vid{grid-template-columns:auto 64px 1fr; row-gap:2px}
   .vid img{width:64px; height:36px}
   .vid .num{grid-column:3; text-align:left}
@@ -503,7 +498,7 @@ function drawBackupWarn(){
 
 /* 어제보다 조회수가 10% 넘게 줄었으면 기록 확인 필요 */
 function viewsAnomaly(chId){
-  const cur = snapshots[chId]?.[today()], old = snapBefore(chId, 1);
+  const cur = snapshots[chId]?.[today()], old = snapBefore(chId, 7);
   if (!cur || !old || !old.views) return false;
   return (old.views - cur.views) / old.views > 0.1;
 }
@@ -524,7 +519,7 @@ function delta(chId, metric, days){
 }
 function deltaHTML(d, unit){
   if (d === null) return '<span class="dt">—</span>';
-  if (d === 0)    return '<span class="dt">변동 없음</span>';
+  if (d === 0)    return '<span class="dt">±0</span>';
   const s = d > 0 ? 'up' : 'down';
   return `<span class="dt ${s}">${d>0?'▲':'▼'} ${nf(Math.abs(d))}${unit||''}</span>`;
 }
@@ -535,8 +530,8 @@ function drawTiles(){
   const sumD = (m,d) => channels.reduce((a,c) => { const x = delta(c.id,m,d); return x===null?a:a+x; }, 0);
   const has = channels.some(c => snapDates(c.id).length > 1);
   const t = [
-    { lab:'전체 구독자', val: compact(sum('subscribers')), sub: has ? '어제 대비 ' + (sumD('subscribers',1)>=0?'+':'') + nf(sumD('subscribers',1)) : nf(sum('subscribers')) + '명' },
-    { lab:'전체 조회수', val: compact(sum('views')),       sub: has ? '어제 대비 +' + nf(Math.max(0,sumD('views',1))) : nf(sum('views')) + '회' },
+    { lab:'전체 구독자', val: compact(sum('subscribers')), sub: has ? '7일간 ' + (sumD('subscribers',7)>=0?'+':'') + nf(sumD('subscribers',7)) : nf(sum('subscribers')) + '명' },
+    { lab:'전체 조회수', val: compact(sum('views')),       sub: has ? '7일간 +' + nf(Math.max(0,sumD('views',7))) : nf(sum('views')) + '회' },
     { lab:'전체 영상',   val: nf(sum('videos')),           sub: has ? '7일간 +' + nf(Math.max(0,sumD('videos',7))) + '개' : '개' },
     { lab:'기록 일수',   val: Math.max(0,...channels.map(c => snapDates(c.id).length)), sub: '일치 누적' }
   ];
@@ -545,43 +540,48 @@ function drawTiles(){
   ).join('');
 }
 
+let sortKey = null, sortDir = -1;
+function setSort(k){
+  if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = -1; }
+  drawStrips();
+}
+function lastUpload(chId){
+  const t = videos.filter(v => v.chId === chId).map(v => +new Date(v.publishedAt));
+  return t.length ? Math.max(...t) : null;
+}
 function drawStrips(){
   const box = document.getElementById('strips');
   if (!channels.length){
     box.innerHTML = `<div class="chartbox empty"><b>아직 등록한 채널이 없습니다</b>설정에서 채널 주소를 넣으면 여기에 현황이 뜹니다.</div>`;
     return;
   }
-  const total = channels.reduce((a,c) => a + (snapshots[c.id]?.[today()]?.subscribers || 0), 0) || 1;
-  box.innerHTML = channels.map(c => {
-    const s = snapshots[c.id]?.[today()] || {subscribers:0,views:0,videos:0};
-    const pct = (s.subscribers / total * 100).toFixed(1);
+  const snap = c => snapshots[c.id]?.[today()] || {subscribers:0,views:0,videos:0};
+  const val = {
+    subscribers: c => snap(c).subscribers,
+    views:       c => snap(c).views,
+    videos:      c => snap(c).videos,
+    last:        c => lastUpload(c.id) || 0
+  };
+  const rows = [...channels];
+  if (sortKey) rows.sort((a,b) => (val[sortKey](a) - val[sortKey](b)) * sortDir);
+  const th = (k, label) => `<button class="${sortKey===k?'on':''}" onclick="setSort('${k}')">${label}${sortKey===k?(sortDir<0?' ▼':' ▲'):''}</button>`;
+  box.innerHTML = `<div class="tbl">
+    <div class="tr th"><span>채널</span>${th('subscribers','구독자 · 7일')}${th('views','조회수 · 7일')}${th('videos','영상 · 7일')}${th('last','최근 업로드')}<span></span></div>` +
+  rows.map(c => {
+    const s = snap(c), lu = lastUpload(c.id);
     return `
-    <div class="strip${c.id===selectedCh?' sel':''}" style="--c:${c.color}" onclick="pickChannel('${c.id}')" title="클릭하면 이 채널 영상만 아래에 표시">
-      <div class="tab"></div>
-      <img class="thumb" src="${esc(c.thumb)}" alt="" onerror="this.style.visibility='hidden'">
+    <div class="tr${c.id===selectedCh?' sel':''}" style="--c:${c.color}" onclick="pickChannel('${c.id}')" title="클릭하면 이 채널 영상만 아래에 표시">
       <div class="who">
-        <div class="nm">${esc(c.title || c.id)}</div>
-        <div class="hd">${esc(c.handle || c.id)}</div>
+        <img src="${esc(c.thumb)}" alt="" onerror="this.style.visibility='hidden'">
+        <div><div class="nm">${esc(c.title || c.id)}</div><div class="hd">${esc(c.handle || c.id)}</div></div>
       </div>
-      <div class="metric">
-        <div class="lab">구독자</div>
-        <div class="val">${nf(s.subscribers)}</div>
-        ${deltaHTML(delta(c.id,'subscribers',1))}
-      </div>
-      <div class="metric">
-        <div class="lab">누적 조회수</div>
-        <div class="val">${compact(s.views)}</div>
-        ${deltaHTML(delta(c.id,'views',1))}${viewsAnomaly(c.id) ? '<span class="dt down" title="어제보다 10% 넘게 줄었습니다. 기록 또는 채널 연결을 확인하세요"> ⚠ 기록 확인</span>' : ''}
-      </div>
-      <div class="metric">
-        <div class="lab">영상</div>
-        <div class="val">${nf(s.videos)}</div>
-        ${deltaHTML(delta(c.id,'videos',7),'개 / 7일')}
-      </div>
+      <div class="cell">${nf(s.subscribers)}${deltaHTML(delta(c.id,'subscribers',7))}</div>
+      <div class="cell">${compact(s.views)}${deltaHTML(delta(c.id,'views',7))}${viewsAnomaly(c.id) ? '<span class="dt down" title="7일 전보다 10% 넘게 줄었습니다. 기록 또는 채널 연결을 확인하세요"> ⚠</span>' : ''}</div>
+      <div class="cell">${nf(s.videos)}${deltaHTML(delta(c.id,'videos',7))}</div>
+      <div class="cell mut">${lu ? ago(new Date(lu).toISOString()) : '—'}</div>
       <button class="kill" onclick="event.stopPropagation();removeChannel('${c.id}')" title="목록에서 빼기">✕</button>
-      <div class="share"><i style="width:${pct}%"></i></div>
     </div>`;
-  }).join('');
+  }).join('') + `</div>`;
 }
 
 let selectedCh = null, vidKind = 'all';
