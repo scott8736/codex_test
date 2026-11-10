@@ -90,6 +90,9 @@ section{margin-top:34px}
 .strip .kill{border:none; background:transparent; color:var(--faint); font-size:1rem; padding:6px 4px; line-height:1}
 .strip .kill:hover{color:var(--down)}
 .strip.loading{opacity:.5}
+.strip{cursor:pointer}
+.strip.sel{outline:2px solid var(--c,#888); outline-offset:-2px}
+.head .note a{color:inherit; text-decoration:underline}
 
 /* 점유 막대 */
 .share{grid-column:1/-1; height:3px; background:var(--rule-soft)}
@@ -196,6 +199,7 @@ input:focus{outline:2px solid var(--ink); outline-offset:-1px; background:#fff}
 <body>
 
 <div id="storeWarn"></div>
+<div id="backupWarn"></div>
 
 <header>
   <div class="wrap bar">
@@ -255,7 +259,7 @@ input:focus{outline:2px solid var(--ink); outline-offset:-1px; background:#fff}
     </section>
 
     <section>
-      <div class="head"><h2>최근 업로드</h2><span class="rule"></span><span class="note" id="vidNote"></span></div>
+      <div class="head"><h2 id="vidTitle">최근 업로드</h2><span class="rule"></span><span class="note" id="vidNote"></span></div>
       <div class="vids" id="vids"></div>
     </section>
 
@@ -488,7 +492,25 @@ function render(){
   document.getElementById('setup').style.display = apiKey ? 'none' : 'block';
   document.getElementById('dash').style.display  = apiKey ? 'block' : 'none';
   if (!apiKey) return;
-  drawStamp(); drawTiles(); drawStrips(); drawChart(); drawVideos(); drawRegList();
+  drawStamp(); drawTiles(); drawStrips(); drawChart(); drawVideos(); drawRegList(); drawBackupWarn();
+}
+
+/* 백업이 7일 넘게 없으면 알린다 (기록은 이 브라우저에만 있다) */
+function drawBackupWarn(){
+  const box = document.getElementById('backupWarn');
+  const has = channels.some(c => snapDates(c.id).length > 1);
+  const last = DB.get('cc_backup');
+  const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null;
+  box.innerHTML = (has && (days === null || days >= 7))
+    ? `<div class="banner">${days === null ? '아직 백업한 적이 없습니다.' : days + '일째 백업하지 않았습니다.'} 기록은 이 브라우저에만 있어요. <a href="#" onclick="exportData();return false">지금 백업</a></div>`
+    : '';
+}
+
+/* 어제보다 조회수가 10% 넘게 줄었으면 기록 확인 필요 */
+function viewsAnomaly(chId){
+  const cur = snapshots[chId]?.[today()], old = snapBefore(chId, 1);
+  if (!cur || !old || !old.views) return false;
+  return (old.views - cur.views) / old.views > 0.1;
 }
 
 function drawStamp(){
@@ -539,7 +561,7 @@ function drawStrips(){
     const s = snapshots[c.id]?.[today()] || {subscribers:0,views:0,videos:0};
     const pct = (s.subscribers / total * 100).toFixed(1);
     return `
-    <div class="strip" style="--c:${c.color}">
+    <div class="strip${c.id===selectedCh?' sel':''}" style="--c:${c.color}" onclick="pickChannel('${c.id}')" title="클릭하면 이 채널 영상만 아래에 표시">
       <div class="tab"></div>
       <img class="thumb" src="${esc(c.thumb)}" alt="" onerror="this.style.visibility='hidden'">
       <div class="who">
@@ -554,17 +576,24 @@ function drawStrips(){
       <div class="metric">
         <div class="lab">누적 조회수</div>
         <div class="val">${compact(s.views)}</div>
-        ${deltaHTML(delta(c.id,'views',1))}
+        ${deltaHTML(delta(c.id,'views',1))}${viewsAnomaly(c.id) ? '<span class="dt down" title="어제보다 10% 넘게 줄었습니다. 기록 또는 채널 연결을 확인하세요"> ⚠ 기록 확인</span>' : ''}
       </div>
       <div class="metric">
         <div class="lab">영상</div>
         <div class="val">${nf(s.videos)}</div>
         ${deltaHTML(delta(c.id,'videos',7),'개 / 7일')}
       </div>
-      <button class="kill" onclick="removeChannel('${c.id}')" title="목록에서 빼기">✕</button>
+      <button class="kill" onclick="event.stopPropagation();removeChannel('${c.id}')" title="목록에서 빼기">✕</button>
       <div class="share"><i style="width:${pct}%"></i></div>
     </div>`;
   }).join('');
+}
+
+let selectedCh = null;
+function pickChannel(id){
+  selectedCh = (id === selectedCh) ? null : id;
+  drawStrips(); drawVideos();
+  if (selectedCh) document.getElementById('vids').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 function switchChart(btn){
@@ -613,8 +642,13 @@ function drawChart(){
 
 function drawVideos(){
   const box = document.getElementById('vids');
-  const list = [...videos].sort((a,b) => new Date(b.publishedAt) - new Date(a.publishedAt)).slice(0,25);
-  document.getElementById('vidNote').textContent = list.length ? list.length + '개' : '';
+  if (selectedCh && !channels.some(c => c.id === selectedCh)) selectedCh = null;
+  const sel = channels.find(c => c.id === selectedCh);
+  const list = [...videos].filter(v => !sel || v.chId === sel.id)
+    .sort((a,b) => new Date(b.publishedAt) - new Date(a.publishedAt)).slice(0,25);
+  document.getElementById('vidTitle').textContent = sel ? (sel.title || sel.id) + ' 영상' : '최근 업로드';
+  document.getElementById('vidNote').innerHTML = (list.length ? list.length + '개' : '') +
+    (sel ? ' · <a href="#" onclick="pickChannel(null);return false">전체 보기</a>' : '');
   if (!list.length){
     box.innerHTML = `<div class="empty"><b>표시할 영상이 없습니다</b>채널을 등록하고 새로고침하면 최근 업로드가 모입니다.</div>`;
     return;
@@ -718,6 +752,8 @@ function exportData(){
   a.href = URL.createObjectURL(blob);
   a.download = `채널콘솔_백업_${today()}.json`;
   a.click(); URL.revokeObjectURL(a.href);
+  DB.set('cc_backup', new Date().toISOString());
+  drawBackupWarn();
   toast('백업 파일을 내려받았습니다', 'good');
 }
 function importData(ev){
