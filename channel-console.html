@@ -90,6 +90,9 @@ section{margin-top:34px}
 .strip .kill{border:none; background:transparent; color:var(--faint); font-size:1rem; padding:6px 4px; line-height:1}
 .strip .kill:hover{color:var(--down)}
 .strip.loading{opacity:.5}
+.kinds{display:flex; gap:4px; margin-right:10px}
+.kinds button{border:1px solid var(--rule); background:var(--panel); border-radius:5px; font-size:.72rem; padding:3px 9px; color:var(--dim); cursor:pointer}
+.kinds button.on{background:#1f2430; color:#fff; border-color:#1f2430}
 .strip{cursor:pointer}
 .strip.sel{outline:2px solid var(--c,#888); outline-offset:-2px}
 .head .note a{color:inherit; text-decoration:underline}
@@ -259,7 +262,7 @@ input:focus{outline:2px solid var(--ink); outline-offset:-1px; background:#fff}
     </section>
 
     <section>
-      <div class="head"><h2 id="vidTitle">최근 업로드</h2><span class="rule"></span><span class="note" id="vidNote"></span></div>
+      <div class="head"><h2 id="vidTitle">최근 업로드</h2><span class="rule"></span><span class="kinds" id="vidKinds"></span><span class="note" id="vidNote"></span></div>
       <div class="vids" id="vids"></div>
     </section>
 
@@ -427,8 +430,15 @@ async function fetchVideos(chId){
     views: +(i.statistics?.viewCount || 0),
     likes: +(i.statistics?.likeCount || 0),
     comments: +(i.statistics?.commentCount || 0),
-    short: /^PT[0-5]?\dS$|^PT1M[0-5]?\dS$|^PT1M$/.test(i.contentDetails?.duration || '')
+    short: isShort(i.contentDetails?.duration)
   }));
+}
+
+/* 쇼츠는 최대 3분(2024-10~). ISO 8601 길이(PT#H#M#S)를 초로 바꿔 판단 */
+function isShort(iso){
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
+  if (!m) return false;
+  return (+m[1]||0)*3600 + (+m[2]||0)*60 + (+m[3]||0) <= 180;
 }
 
 /* ── 스냅샷 ───────────────────────────────── */
@@ -589,7 +599,8 @@ function drawStrips(){
   }).join('');
 }
 
-let selectedCh = null;
+let selectedCh = null, vidKind = 'all';
+function setKind(k){ vidKind = k; drawVideos(); }
 function pickChannel(id){
   selectedCh = (id === selectedCh) ? null : id;
   drawStrips(); drawVideos();
@@ -644,7 +655,11 @@ function drawVideos(){
   const box = document.getElementById('vids');
   if (selectedCh && !channels.some(c => c.id === selectedCh)) selectedCh = null;
   const sel = channels.find(c => c.id === selectedCh);
-  const list = [...videos].filter(v => !sel || v.chId === sel.id)
+  const pool = videos.filter(v => !sel || v.chId === sel.id);
+  const nShort = pool.filter(v => v.short).length, nLong = pool.length - nShort;
+  document.getElementById('vidKinds').innerHTML = [['all','전체',pool.length],['long','롱폼',nLong],['short','쇼츠',nShort]]
+    .map(([k,l,n]) => `<button class="${vidKind===k?'on':''}" onclick="setKind('${k}')">${l} ${n}</button>`).join('');
+  const list = pool.filter(v => vidKind==='all' || (vidKind==='short') === !!v.short)
     .sort((a,b) => new Date(b.publishedAt) - new Date(a.publishedAt)).slice(0,25);
   document.getElementById('vidTitle').textContent = sel ? (sel.title || sel.id) + ' 영상' : '최근 업로드';
   document.getElementById('vidNote').innerHTML = (list.length ? list.length + '개' : '') +
